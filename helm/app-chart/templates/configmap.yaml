@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  application.yml: |
+    server:
+      port: {{ .Values.service.port }}
+    custom:
+      message: {{ .Values.config.appMessage | quote }}
+      feature-flag: {{ .Values.config.featureFlag }}

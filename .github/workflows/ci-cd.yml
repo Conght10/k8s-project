@@ -1,12 +1,12 @@
-name: Java CI/CD with K8s
+name: Java CI/CD with K8s and Helm
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: self-hosted
     steps:
     - uses: actions/checkout@v4
     
@@ -26,19 +26,33 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push Gateway Service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./gateway-service
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:latest
-
+    # Build and Push Image cho các service
     - name: Build and push Order Service
       uses: docker/build-push-action@v5
       with:
         context: ./order-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ github.sha }}
+
+    - name: Build and push Inventory Service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./inventory-service
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/inventory-service:${{ github.sha }}
+
+    - name: Build and push Gateway Service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./gateway-service
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}
+
+    # Thiết lập Helm và Kubeconfig
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 'latest'
 
     - name: Set up Kubeconfig
       run: |
@@ -46,15 +60,26 @@ jobs:
         echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
         chmod 600 $HOME/.kube/config
 
-    - name: Deploy to K8s
+    # Triển khai bằng Helm
+    - name: Deploy services using Helm
       run: |
-        # Thay thế placeholder image trong file manifest nếu cần
-        sed -i "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:latest|g" k8s/gateway-deployment.yaml
-        sed -i "s|image: order-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:latest|g" k8s/order-deployment.yaml
-        
+        # Triển khai Order Service
+        helm upgrade --install order-app ./helm/app-chart \
+          -f ./helm/app-chart/values-order.yaml \
+          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/order-service \
+          --set image.tag=${{ github.sha }} \
+          --wait --timeout 5m
+
+        # Triển khai Inventory Service
+        helm upgrade --install inventory-app ./helm/app-chart \
+          -f ./helm/app-chart/values-inventory.yaml \
+          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/inventory-service \
+          --set image.tag=${{ github.sha }} \
+          --wait --timeout 5m
+
+    # Triển khai Gateway (tạm thời vẫn dùng kubectl vì chưa tạo Helm Chart riêng cho Gateway)
+    - name: Deploy Gateway using Kubectl
+      run: |
+        sed -i "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}|g" k8s/gateway-deployment.yaml
         kubectl apply -f k8s/gateway-deployment.yaml
-        kubectl apply -f k8s/order-deployment.yaml
-        
-        # Verify deployment
         kubectl rollout status deployment/gateway-service
-        kubectl rollout status deployment/order-service

@@ -1,0 +1,14 @@
+# Cấu hình riêng cho Inventory Service
+replicaCount: 1
+
+image:
+  repository: conght/inventory-service
+  tag: "1.0.0"
+
+service:
+  type: ClusterIP
+  port: 8082
+
+config:
+  appMessage: "Dịch vụ Quản lý Kho hàng đang trực tuyến!"
+  featureFlag: false

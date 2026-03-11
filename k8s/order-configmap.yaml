@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+data:
+  # Bạn có thể lưu từng key-value
+  app.message: "Xin chào từ ConfigMap trên Kubernetes!"
+  # Hoặc lưu cả một file cấu hình
+  application.yml: |
+    server:
+      port: 8081
+    spring:
+      application:
+        name: order-service
+    custom:
+      feature-flag: true
+      retry-count: 5

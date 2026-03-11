@@ -17,6 +17,13 @@ spec:
         image: order-service:latest
         ports:
         - containerPort: 8081
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: order-service-config
 ---
 apiVersion: v1
 kind: Service

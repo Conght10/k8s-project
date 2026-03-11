@@ -1,0 +1,55 @@
+---
+# Source: microservice-app/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-app-config
+data:
+  application.yml: |
+    server:
+      port: 8081
+    custom:
+      message: "Dịch vụ Quản lý Đơn hàng đang sẵn sàng!"
+      feature-flag: true
+---
+# Source: microservice-app/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-app-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+  selector:
+    app: order-app
+---
+# Source: microservice-app/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-app-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-app
+  template:
+    metadata:
+      labels:
+        app: order-app
+    spec:
+      containers:
+        - name: order-app
+          image: "conght/order-service:1.0.0"
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: order-app-config

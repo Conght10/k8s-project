@@ -1,0 +1,55 @@
+---
+# Source: microservice-app/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventory-app-config
+data:
+  application.yml: |
+    server:
+      port: 8082
+    custom:
+      message: "Dịch vụ Quản lý Kho hàng đang trực tuyến!"
+      feature-flag: false
+---
+# Source: microservice-app/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-app-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8082
+      targetPort: 8082
+      protocol: TCP
+  selector:
+    app: inventory-app
+---
+# Source: microservice-app/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-app-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-app
+  template:
+    metadata:
+      labels:
+        app: inventory-app
+    spec:
+      containers:
+        - name: inventory-app
+          image: "conght/inventory-service:1.0.0"
+          ports:
+            - containerPort: 8082
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: inventory-app-config

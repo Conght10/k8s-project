@@ -1,0 +1,15 @@
+# Các giá trị mặc định cho microservices
+replicaCount: 1
+
+image:
+  repository: conght/order-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8081
+
+config:
+  appMessage: "Chào mừng bạn đến với Microservice sử dụng Helm!"
+  featureFlag: false
