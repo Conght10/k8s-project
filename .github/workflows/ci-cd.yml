@@ -7,18 +7,21 @@ on:
 jobs:
   build-and-deploy:
     runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-        
+    - name: Debug Environment
+      run: |
+        echo "Current Workdir: $PWD"
+        which mvn || echo "mvn not found"
+        mvn -version || echo "mvn version failed"
+
     - name: Build with Maven
-      run: mvn clean package -DskipTests
+      run: |
+        mvn clean package -DskipTests
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
