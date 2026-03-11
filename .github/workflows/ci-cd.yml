@@ -83,6 +83,6 @@ jobs:
     # Triển khai Gateway (tạm thời vẫn dùng kubectl vì chưa tạo Helm Chart riêng cho Gateway)
     - name: Deploy Gateway using Kubectl
       run: |
-        sed -i "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}|g" k8s/gateway-deployment.yaml
+        sed -i '' "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}|g" k8s/gateway-deployment.yaml
         kubectl apply -f k8s/gateway-deployment.yaml
         kubectl rollout status deployment/gateway-service
