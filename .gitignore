@@ -1,11 +1,27 @@
 # Compiled class file
 *.class
+target/
+*.jar
+*.war
+*.ear
 
 # Log file
 *.log
 
 # BlueJ files
 *.ctxt
+
+# Mobile Tools for iOS (if any)
+.testcaferc.json
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.DS_Store
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
