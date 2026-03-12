@@ -1,8 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-config
-data:
+  name: {{ include "microservice.fullname" . }}-config
+  labels:
+    {{- include "microservice.labels" . | nindent 4 }}
   application.yml: |
     server:
       port: {{ .Values.service.port }}

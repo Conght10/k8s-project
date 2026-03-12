@@ -1,9 +1,9 @@
 # Cấu hình riêng cho Order Service
-replicaCount: 2
+replicaCount: 1
 
 image:
-  repository: conght/order-service
-  tag: "1.0.0"
+  repository: order-service
+  tag: latest
 
 service:
   type: ClusterIP
@@ -12,3 +12,4 @@ service:
 config:
   appMessage: "Dịch vụ Quản lý Đơn hàng đang sẵn sàng!"
   featureFlag: true
+

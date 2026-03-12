@@ -2,8 +2,8 @@
 replicaCount: 1
 
 image:
-  repository: conght/inventory-service
-  tag: "1.0.0"
+  repository: inventory-service
+  tag: latest
 
 service:
   type: ClusterIP
@@ -12,3 +12,4 @@ service:
 config:
   appMessage: "Dịch vụ Quản lý Kho hàng đang trực tuyến!"
   featureFlag: false
+
