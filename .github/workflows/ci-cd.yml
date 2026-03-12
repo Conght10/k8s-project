@@ -2,10 +2,52 @@ name: Java CI/CD with K8s and Helm
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "uat", "dev" ]
 
 jobs:
+  check-changes:
+    runs-on: self-hosted
+    outputs:
+      gateway: ${{ steps.filter.outputs.gateway }}
+      order: ${{ steps.filter.outputs.order }}
+      inventory: ${{ steps.filter.outputs.inventory }}
+      env: ${{ steps.set-env.outputs.env }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set Environment
+      id: set-env
+      run: |
+        if [ "${{ github.ref_name }}" == "main" ]; then
+          echo "env=prod" >> $GITHUB_OUTPUT
+        elif [ "${{ github.ref_name }}" == "uat" ]; then
+          echo "env=uat" >> $GITHUB_OUTPUT
+        else
+          echo "env=dev" >> $GITHUB_OUTPUT
+        fi
+
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          gateway:
+            - 'gateway-service/**'
+            - 'pom.xml'
+            - 'k8s/gateway-deployment.yaml'
+            - '.github/workflows/ci-cd.yml'
+          order:
+            - 'order-service/**'
+            - 'pom.xml'
+            - 'helm/app-chart/**'
+            - '.github/workflows/ci-cd.yml'
+          inventory:
+            - 'inventory-service/**'
+            - 'pom.xml'
+            - 'helm/app-chart/**'
+            - '.github/workflows/ci-cd.yml'
+
   build-and-deploy:
+    needs: check-changes
     runs-on: self-hosted
     defaults:
       run:
@@ -16,21 +58,29 @@ jobs:
     - name: Debug Environment
       run: |
         echo "Current Workdir: $PWD"
-        which mvn || echo "mvn not found"
-        mvn -version || echo "mvn version failed"
+        echo "Target Env: ${{ needs.check-changes.outputs.env }}"
+        echo "Changes detected: Gateway=${{ needs.check-changes.outputs.gateway }}, Order=${{ needs.check-changes.outputs.order }}, Inventory=${{ needs.check-changes.outputs.inventory }}"
 
     - name: Build with Maven
+      if: needs.check-changes.outputs.gateway == 'true' || needs.check-changes.outputs.order == 'true' || needs.check-changes.outputs.inventory == 'true'
       run: |
-        mvn clean package -DskipTests
+        MODULES=""
+        if [ "${{ needs.check-changes.outputs.gateway }}" == "true" ]; then MODULES="$MODULES,gateway-service"; fi
+        if [ "${{ needs.check-changes.outputs.order }}" == "true" ]; then MODULES="$MODULES,order-service"; fi
+        if [ "${{ needs.check-changes.outputs.inventory }}" == "true" ]; then MODULES="$MODULES,inventory-service"; fi
+        MODULES_STR=$(echo $MODULES | sed 's/^,//')
+        echo "Building modules: $MODULES_STR"
+        mvn clean package -pl $MODULES_STR -am -DskipTests
 
     - name: Log in to Docker Hub
+      if: needs.check-changes.outputs.gateway == 'true' || needs.check-changes.outputs.order == 'true' || needs.check-changes.outputs.inventory == 'true'
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Build and Push Image cho các service
     - name: Build and push Order Service
+      if: needs.check-changes.outputs.order == 'true'
       uses: docker/build-push-action@v5
       with:
         context: ./order-service
@@ -38,6 +88,7 @@ jobs:
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ github.sha }}
 
     - name: Build and push Inventory Service
+      if: needs.check-changes.outputs.inventory == 'true'
       uses: docker/build-push-action@v5
       with:
         context: ./inventory-service
@@ -45,44 +96,45 @@ jobs:
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/inventory-service:${{ github.sha }}
 
     - name: Build and push Gateway Service
+      if: needs.check-changes.outputs.gateway == 'true'
       uses: docker/build-push-action@v5
       with:
         context: ./gateway-service
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}
 
-    # Thiết lập Helm và Kubeconfig
-    - name: Set up Helm
-      uses: azure/setup-helm@v3
-      with:
-        version: 'latest'
-
     - name: Set up Kubeconfig
       run: |
         mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
-        chmod 600 $HOME/.kube/config
+        if [ -n "${{ secrets.KUBECONFIG }}" ]; then
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+        fi
 
-    # Triển khai bằng Helm
-    - name: Deploy services using Helm
+    - name: Deploy Order Service
+      if: needs.check-changes.outputs.order == 'true'
       run: |
-        # Triển khai Order Service
+        # Ghép file values mặc định và file values môi trường
         helm upgrade --install order-app ./helm/app-chart \
-          -f ./helm/app-chart/values-order.yaml \
-          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/order-service \
+          --namespace ${{ needs.check-changes.outputs.env }} --create-namespace \
+          -f ./helm/app-chart/values.yaml \
+          -f ./helm/app-chart/env/${{ needs.check-changes.outputs.env }}/order.yaml \
           --set image.tag=${{ github.sha }} \
           --wait --timeout 5m
 
-        # Triển khai Inventory Service
-        helm upgrade --install inventory-app ./helm/app-chart \
-          -f ./helm/app-chart/values-inventory.yaml \
-          --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/inventory-service \
-          --set image.tag=${{ github.sha }} \
-          --wait --timeout 5m
-
-    # Triển khai Gateway (tạm thời vẫn dùng kubectl vì chưa tạo Helm Chart riêng cho Gateway)
-    - name: Deploy Gateway using Kubectl
+    - name: Deploy Inventory Service
+      if: needs.check-changes.outputs.inventory == 'true'
       run: |
+        helm upgrade --install inventory-app ./helm/app-chart \
+          --namespace ${{ needs.check-changes.outputs.env }} --create-namespace \
+          -f ./helm/app-chart/values.yaml \
+          -f ./helm/app-chart/env/${{ needs.check-changes.outputs.env }}/inventory.yaml \
+          --set image.tag=${{ github.sha }} \
+          --wait --timeout 5m
+
+    - name: Deploy Gateway Service
+      if: needs.check-changes.outputs.gateway == 'true'
+      run: |
+        # Tạm thời Gateway chưa dùng Helm đầy đủ, ta chuyển nó sang namespace môi trường
         sed -i '' "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}|g" k8s/gateway-deployment.yaml
-        kubectl apply -f k8s/gateway-deployment.yaml
-        kubectl rollout status deployment/gateway-service
+        kubectl apply -f k8s/gateway-deployment.yaml -n ${{ needs.check-changes.outputs.env }}

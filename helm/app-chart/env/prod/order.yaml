@@ -1,0 +1,20 @@
+# Prod environment configuration for Order Service
+replicaCount: 3
+
+image:
+  repository: conght/order-service
+
+service:
+  port: 8081
+
+config:
+  appMessage: "Order Service [PRODUCTION]"
+  featureFlag: true
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1024Mi

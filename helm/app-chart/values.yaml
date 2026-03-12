@@ -14,3 +14,11 @@ config:
   appMessage: "Chào mừng bạn đến với Microservice sử dụng Helm!"
   featureFlag: false
 
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+

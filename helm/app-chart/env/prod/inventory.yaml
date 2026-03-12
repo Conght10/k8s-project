@@ -1,0 +1,20 @@
+# Prod environment configuration for Inventory Service
+replicaCount: 3
+
+image:
+  repository: conght/inventory-service
+
+service:
+  port: 8082
+
+config:
+  appMessage: "Inventory Service [PRODUCTION]"
+  featureFlag: true
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1024Mi

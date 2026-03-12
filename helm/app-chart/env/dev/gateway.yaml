@@ -1,0 +1,21 @@
+# Dev environment configuration for Gateway Service
+replicaCount: 1
+
+image:
+  repository: conght/gateway-service
+
+service:
+  type: LoadBalancer
+  port: 80
+
+config:
+  appMessage: "API Gateway [DEV MODE]"
+  featureFlag: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

@@ -1,0 +1,20 @@
+# Dev environment configuration for Inventory Service
+replicaCount: 1
+
+image:
+  repository: conght/inventory-service
+
+service:
+  port: 8082
+
+config:
+  appMessage: "Inventory Service [DEV MODE]"
+  featureFlag: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

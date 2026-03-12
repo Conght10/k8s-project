@@ -1,0 +1,21 @@
+# Prod environment configuration for Gateway Service
+replicaCount: 2
+
+image:
+  repository: conght/gateway-service
+
+service:
+  type: LoadBalancer
+  port: 80
+
+config:
+  appMessage: "API Gateway [PRODUCTION]"
+  featureFlag: true
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
