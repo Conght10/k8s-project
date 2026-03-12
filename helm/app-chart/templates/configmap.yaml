@@ -4,6 +4,7 @@ metadata:
   name: {{ include "microservice.fullname" . }}-config
   labels:
     {{- include "microservice.labels" . | nindent 4 }}
+data:
   application.yml: |
     server:
       port: {{ .Values.service.port }}
