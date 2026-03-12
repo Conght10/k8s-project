@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: my-app
-  pullPolicy: Never # Mặc định dùng cho local Docker Desktop
+  pullPolicy: Always # Để K8s luôn tải ảnh mới nhất từ Docker Hub
   tag: ""
 
 service:

@@ -8,6 +8,16 @@ data:
   application.yml: |
     server:
       port: {{ .Values.service.port }}
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info
+      endpoint:
+        health:
+          probes:
+            enabled: true
+          show-details: always
     custom:
       message: {{ .Values.config.appMessage | quote }}
       feature-flag: {{ .Values.config.featureFlag }}
