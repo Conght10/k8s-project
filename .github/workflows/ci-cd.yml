@@ -8,10 +8,10 @@ jobs:
   check-changes:
     runs-on: self-hosted
     outputs:
-      gateway: ${{ steps.filter.outputs.gateway }}
-      order: ${{ steps.filter.outputs.order }}
-      inventory: ${{ steps.filter.outputs.inventory }}
       env: ${{ steps.set-env.outputs.env }}
+      gateway: ${{ steps.filter.outputs.common == 'true' || steps.filter.outputs.gateway_code == 'true' || steps.filter.outputs.gateway_env == 'true' || steps.check-exists.outputs.gateway_exists == 'false' }}
+      order: ${{ steps.filter.outputs.common == 'true' || steps.filter.outputs.order_code == 'true' || steps.filter.outputs.order_env == 'true' || steps.check-exists.outputs.order_exists == 'false' }}
+      inventory: ${{ steps.filter.outputs.common == 'true' || steps.filter.outputs.inventory_code == 'true' || steps.filter.outputs.inventory_env == 'true' || steps.check-exists.outputs.inventory_exists == 'false' }}
     steps:
     - uses: actions/checkout@v4
     
@@ -26,26 +26,46 @@ jobs:
           echo "env=dev" >> $GITHUB_OUTPUT
         fi
 
+    - name: Check Service Existence
+      id: check-exists
+      run: |
+        ENV=${{ steps.set-env.outputs.env }}
+        check_service() {
+          if kubectl get deployment $1 -n $ENV >/dev/null 2>&1; then
+            echo "$2_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "$2_exists=false" >> $GITHUB_OUTPUT
+            echo "Service $1 not found in $ENV. Forcing deploy."
+          fi
+        }
+        
+        # Lưu ý: Tên deployment trong Helm là [release-name]-microservice-app
+        check_service "gateway-service" "gateway"
+        check_service "order-app-microservice-app" "order"
+        check_service "inventory-app-microservice-app" "inventory"
+
     - uses: dorny/paths-filter@v3
       id: filter
       with:
         filters: |
-          gateway:
+          common:
+            - 'helm/app-chart/values.yaml'
+            - 'helm/app-chart/templates/**'
+            - '.github/workflows/ci-cd.yml'
+            - 'pom.xml'
+          gateway_code:
             - 'gateway-service/**'
-            - 'pom.xml'
-            - 'helm/app-chart/**'
             - 'k8s/gateway-deployment.yaml'
-            - '.github/workflows/ci-cd.yml'
-          order:
+          gateway_env:
+            - 'helm/app-chart/env/${{ steps.set-env.outputs.env }}/gateway.yaml'
+          order_code:
             - 'order-service/**'
-            - 'pom.xml'
-            - 'helm/app-chart/**'
-            - '.github/workflows/ci-cd.yml'
-          inventory:
+          order_env:
+            - 'helm/app-chart/env/${{ steps.set-env.outputs.env }}/order.yaml'
+          inventory_code:
             - 'inventory-service/**'
-            - 'pom.xml'
-            - 'helm/app-chart/**'
-            - '.github/workflows/ci-cd.yml'
+          inventory_env:
+            - 'helm/app-chart/env/${{ steps.set-env.outputs.env }}/inventory.yaml'
 
   build-and-deploy:
     needs: check-changes
