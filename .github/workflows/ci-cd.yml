@@ -85,7 +85,7 @@ jobs:
       with:
         context: ./order-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ github.sha }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:${{ needs.check-changes.outputs.env }}-${{ github.sha }}
 
     - name: Build and push Inventory Service
       if: needs.check-changes.outputs.inventory == 'true'
@@ -93,7 +93,7 @@ jobs:
       with:
         context: ./inventory-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/inventory-service:${{ github.sha }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/inventory-service:${{ needs.check-changes.outputs.env }}-${{ github.sha }}
 
     - name: Build and push Gateway Service
       if: needs.check-changes.outputs.gateway == 'true'
@@ -101,7 +101,7 @@ jobs:
       with:
         context: ./gateway-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ needs.check-changes.outputs.env }}-${{ github.sha }}
 
     - name: Set up Kubeconfig
       run: |
@@ -132,7 +132,7 @@ jobs:
           --namespace ${{ needs.check-changes.outputs.env }} \
           -f ./helm/app-chart/values.yaml \
           -f ./helm/app-chart/env/${{ needs.check-changes.outputs.env }}/order.yaml \
-          --set image.tag=${{ github.sha }} \
+          --set image.tag=${{ needs.check-changes.outputs.env }}-${{ github.sha }} \
           --set "imagePullSecrets[0].name=dockerhub-secret" \
           --wait --timeout 5m
 
@@ -143,7 +143,7 @@ jobs:
           --namespace ${{ needs.check-changes.outputs.env }} \
           -f ./helm/app-chart/values.yaml \
           -f ./helm/app-chart/env/${{ needs.check-changes.outputs.env }}/inventory.yaml \
-          --set image.tag=${{ github.sha }} \
+          --set image.tag=${{ needs.check-changes.outputs.env }}-${{ github.sha }} \
           --set "imagePullSecrets[0].name=dockerhub-secret" \
           --wait --timeout 5m
 
@@ -151,5 +151,5 @@ jobs:
       if: needs.check-changes.outputs.gateway == 'true'
       run: |
         # Tạm thời Gateway chưa dùng Helm đầy đủ, ta chuyển nó sang namespace môi trường
-        sed -i '' "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ github.sha }}|g" k8s/gateway-deployment.yaml
+        sed -i '' "s|image: gateway-service:latest|image: ${{ secrets.DOCKERHUB_USERNAME }}/gateway-service:${{ needs.check-changes.outputs.env }}-${{ github.sha }}|g" k8s/gateway-deployment.yaml
         kubectl apply -f k8s/gateway-deployment.yaml -n ${{ needs.check-changes.outputs.env }}
