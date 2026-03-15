@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: conght/order-service
+  repository: htcong104/order-service
 
 service:
   port: 8081

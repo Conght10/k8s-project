@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: conght/inventory-service
+  repository: htcong104/inventory-service
 
 service:
   port: 8082

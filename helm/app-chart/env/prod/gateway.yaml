@@ -2,7 +2,7 @@
 replicaCount: 2
 
 image:
-  repository: conght/gateway-service
+  repository: htcong104/gateway-service
 
 service:
   type: LoadBalancer
