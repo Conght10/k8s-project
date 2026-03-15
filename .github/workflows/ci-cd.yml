@@ -33,6 +33,7 @@ jobs:
           gateway:
             - 'gateway-service/**'
             - 'pom.xml'
+            - 'helm/app-chart/**'
             - 'k8s/gateway-deployment.yaml'
             - '.github/workflows/ci-cd.yml'
           order:
