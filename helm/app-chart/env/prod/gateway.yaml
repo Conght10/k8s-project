@@ -5,8 +5,16 @@ image:
   repository: htcong104/gateway-service
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 80
+
+ingress:
+  enabled: true
+  hosts:
+    - host: prod.myapp.local
+      paths:
+        - path: /
+          pathType: Prefix
 
 config:
   appMessage: "API Gateway [PRODUCTION]"
