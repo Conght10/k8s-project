@@ -111,25 +111,40 @@ jobs:
           chmod 600 $HOME/.kube/config
         fi
 
+    - name: Create Namespace and ImagePullSecret
+      run: |
+        # Tạo namespace trước
+        kubectl create namespace ${{ needs.check-changes.outputs.env }} --dry-run=client -o yaml | kubectl apply -f -
+        
+        # Tạo hoặc cập nhật Secret để K8s có quyền PULL ảnh từ Docker Hub
+        kubectl create secret docker-registry dockerhub-secret \
+          --docker-server=https://index.docker.io/v1/ \
+          --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
+          --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
+          --namespace ${{ needs.check-changes.outputs.env }} \
+          --dry-run=client -o yaml | kubectl apply -f -
+
     - name: Deploy Order Service
       if: needs.check-changes.outputs.order == 'true'
       run: |
         # Ghép file values mặc định và file values môi trường
         helm upgrade --install order-app ./helm/app-chart \
-          --namespace ${{ needs.check-changes.outputs.env }} --create-namespace \
+          --namespace ${{ needs.check-changes.outputs.env }} \
           -f ./helm/app-chart/values.yaml \
           -f ./helm/app-chart/env/${{ needs.check-changes.outputs.env }}/order.yaml \
           --set image.tag=${{ github.sha }} \
+          --set "imagePullSecrets[0].name=dockerhub-secret" \
           --wait --timeout 5m
 
     - name: Deploy Inventory Service
       if: needs.check-changes.outputs.inventory == 'true'
       run: |
         helm upgrade --install inventory-app ./helm/app-chart \
-          --namespace ${{ needs.check-changes.outputs.env }} --create-namespace \
+          --namespace ${{ needs.check-changes.outputs.env }} \
           -f ./helm/app-chart/values.yaml \
           -f ./helm/app-chart/env/${{ needs.check-changes.outputs.env }}/inventory.yaml \
           --set image.tag=${{ github.sha }} \
+          --set "imagePullSecrets[0].name=dockerhub-secret" \
           --wait --timeout 5m
 
     - name: Deploy Gateway Service

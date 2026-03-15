@@ -1,6 +1,8 @@
 # Các giá trị mặc định cho microservices
 replicaCount: 1
 
+imagePullSecrets: []
+
 image:
   repository: my-app
   pullPolicy: Always # Để K8s luôn tải ảnh mới nhất từ Docker Hub
