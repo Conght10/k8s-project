@@ -12,8 +12,15 @@ ingress:
   hosts:
     - host: dev.myapp.local
       paths:
-        - path: /orders
+        - path: /inventory
           pathType: Prefix
+  tls:
+    - hosts:
+        - dev.myapp.local
+      secretName: dev-myapp-tls
+    - hosts:
+        - dev.myapp.local
+      secretName: dev-myapp-tls
 
 config:
   appMessage: "Order Service [DEV MODE]"

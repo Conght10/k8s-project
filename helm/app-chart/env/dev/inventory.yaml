@@ -14,6 +14,10 @@ ingress:
       paths:
         - path: /inventory
           pathType: Prefix
+  tls:
+    - hosts:
+        - dev.myapp.local
+      secretName: dev-myapp-tls
 
 config:
   appMessage: "Inventory Service [DEV MODE]"

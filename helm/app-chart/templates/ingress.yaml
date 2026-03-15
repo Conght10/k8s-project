@@ -10,6 +10,9 @@ metadata:
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
+    {{- if .Values.ingress.tls }}
+    cert-manager.io/cluster-issuer: "selfsigned-cluster-issuer"
+    {{- end }}
   {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
