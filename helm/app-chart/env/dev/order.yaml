@@ -1,5 +1,5 @@
 # Dev environment configuration for Order Service
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: htcong104/order-service
