@@ -5,14 +5,14 @@ image:
   repository: htcong104/order-service
 
 service:
-  port: 8082
+  port: 8080
 
 ingress:
   enabled: true
   hosts:
-    - host: dev.order.local
+    - host: dev.myapp.local
       paths:
-        - path: /
+        - path: /orders
           pathType: Prefix
 
 config:
