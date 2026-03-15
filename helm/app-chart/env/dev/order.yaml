@@ -12,12 +12,9 @@ ingress:
   hosts:
     - host: dev.myapp.local
       paths:
-        - path: /inventory
+        - path: /orders
           pathType: Prefix
   tls:
-    - hosts:
-        - dev.myapp.local
-      secretName: dev-myapp-tls
     - hosts:
         - dev.myapp.local
       secretName: dev-myapp-tls
