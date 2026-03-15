@@ -7,6 +7,14 @@ image:
 service:
   port: 8082
 
+ingress:
+  enabled: true
+  hosts:
+    - host: dev.inventory.local
+      paths:
+        - path: /
+          pathType: Prefix
+
 config:
   appMessage: "Inventory Service [DEV MODE]"
   featureFlag: false
